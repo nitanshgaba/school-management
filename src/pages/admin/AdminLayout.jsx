@@ -13,6 +13,7 @@ const navItems = [
   { path: '/admin/syllabus', label: 'Syllabus', icon: '📖' },
   { path: '/admin/exams', label: 'Exams', icon: '📝' },
   { path: '/admin/marks', label: 'Marks', icon: '🏆' },
+  { path: '/admin/analytics', label: 'Analytics', icon: '📊' },
   { path: '/admin/settings', label: 'Settings', icon: '⚙️' },
 ]
 

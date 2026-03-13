@@ -16,6 +16,7 @@ import Notes from './pages/admin/Notes'
 import Exams from './pages/admin/Exams'
 import Marks from './pages/admin/Marks'
 import Settings from './pages/admin/Settings'
+import AdminAnalytics from './pages/admin/Analytics'
 
 import TeacherLayout from './pages/teacher/TeacherLayout'
 import TeacherDashboard from './pages/teacher/Dashboard'
@@ -83,6 +84,7 @@ function App() {
           <Route path="notes" element={<Notes />} />
           <Route path="exams" element={<Exams />} />
           <Route path="marks" element={<Marks />} />
+          <Route path="analytics" element={<AdminAnalytics />} />
           <Route path="settings" element={<Settings />} />
         </Route>
 
