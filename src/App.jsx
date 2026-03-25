@@ -16,6 +16,7 @@ import Notes from './pages/admin/Notes'
 import Exams from './pages/admin/Exams'
 import Marks from './pages/admin/Marks'
 import Settings from './pages/admin/Settings'
+import AdminEvents from './pages/admin/Events'
 import AdminAnalytics from './pages/admin/Analytics'
 
 import TeacherLayout from './pages/teacher/TeacherLayout'
@@ -29,6 +30,8 @@ import TeacherLeave from './pages/teacher/Leave'
 import TeacherSettings from './pages/teacher/Settings'
 import TeacherExams from './pages/teacher/Exams'
 import TeacherFeedback from './pages/teacher/Feedback'
+import TeacherEvents from './pages/teacher/Events'
+import TeacherAnnouncements from './pages/teacher/Announcements'
 
 import StudentLayout from './pages/student/StudentLayout'
 import StudentDashboard from './pages/student/Dashboard'
@@ -40,6 +43,8 @@ import StudentMarks from './pages/student/Marks'
 import StudentFeedback from './pages/student/Feedback'
 import StudentSettings from './pages/student/Settings'
 import StudentExams from './pages/student/Exams'
+import StudentEvents from './pages/student/Events'
+import StudentAnnouncements from './pages/student/Announcements'
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, profile, loading } = useAuth()
@@ -85,6 +90,7 @@ function App() {
           <Route path="exams" element={<Exams />} />
           <Route path="marks" element={<Marks />} />
           <Route path="analytics" element={<AdminAnalytics />} />
+          <Route path="events" element={<AdminEvents />} />
           <Route path="settings" element={<Settings />} />
         </Route>
 
@@ -103,6 +109,8 @@ function App() {
           <Route path="settings" element={<TeacherSettings />} />
           <Route path="exams" element={<TeacherExams />} />
           <Route path="feedback" element={<TeacherFeedback />} />
+          <Route path="events" element={<TeacherEvents />} />
+          <Route path="announcements" element={<TeacherAnnouncements />} />
         </Route>
 
         <Route path="/student" element={
@@ -118,6 +126,8 @@ function App() {
           <Route path="marks" element={<StudentMarks />} />
           <Route path="feedback" element={<StudentFeedback />} />
           <Route path="exams" element={<StudentExams />} />
+          <Route path="events" element={<StudentEvents />} />
+          <Route path="announcements" element={<StudentAnnouncements />} />
           <Route path="settings" element={<StudentSettings />} />
         </Route>
 

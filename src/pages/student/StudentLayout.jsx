@@ -10,6 +10,8 @@ const MENU = [
   { label: 'Notes', icon: '📝', path: '/student/notes' },
   { label: 'Marks', icon: '🏆', path: '/student/marks' },
   { label: 'Exams', icon: '📝', path: '/student/exams' },
+  { label: 'Events', icon: '🎉', path: '/student/events' },
+  { label: 'Announcements', icon: '📢', path: '/student/announcements' },
   { label: 'Feedback', icon: '💬', path: '/student/feedback' },
   { label: 'Settings', icon: '⚙️', path: '/student/settings' },
 ]

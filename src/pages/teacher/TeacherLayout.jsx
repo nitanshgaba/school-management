@@ -11,6 +11,8 @@ const MENU = [
   { label: 'Marks', icon: '🏆', path: '/teacher/marks' },
   { label: 'Leave', icon: '🏖️', path: '/teacher/leave' },
   { label: 'Exams', icon: '📝', path: '/teacher/exams' },
+  { label: 'Events', icon: '🎉', path: '/teacher/events' },
+  { label: 'Announcements', icon: '📢', path: '/teacher/announcements' },
   { label: 'Feedback', icon: '💬', path: '/teacher/feedback' },
   { label: 'Settings', icon: '⚙️', path: '/teacher/settings' },
 ]
