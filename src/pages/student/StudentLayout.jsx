@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { FocusProvider } from '../../context/FocusContext'
+import FocusWidget from '../../components/FocusWidget'
 
 const MENU = [
   { label: 'Dashboard', icon: '📊', path: '/student/dashboard' },
@@ -41,6 +43,7 @@ export default function StudentLayout() {
   }
 
   return (
+    <FocusProvider>
     <div style={styles.container}>
       <div style={{ ...styles.sidebar, width: collapsed ? '70px' : '220px' }}>
         <div style={styles.logo} onClick={() => setCollapsed(!collapsed)}>
@@ -102,6 +105,8 @@ export default function StudentLayout() {
         </div>
       </div>
     </div>
+    <FocusWidget />
+    </FocusProvider>
   )
 }
 
