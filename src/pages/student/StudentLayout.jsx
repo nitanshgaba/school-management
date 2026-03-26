@@ -1,3 +1,5 @@
+// student/StudentLayout.jsx 
+
 import { useState, useEffect } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
@@ -13,6 +15,7 @@ const MENU = [
   { label: 'Events', icon: '🎉', path: '/student/events' },
   { label: 'Announcements', icon: '📢', path: '/student/announcements' },
   { label: 'AI Analyzer', icon: '🤖', path: '/student/assignment-analyzer' },
+  { label: 'Focus Tracker', icon: '👁️', path: '/student/focus-tracker' },
   { label: 'Feedback', icon: '💬', path: '/student/feedback' },
   { label: 'Settings', icon: '⚙️', path: '/student/settings' },
 ]

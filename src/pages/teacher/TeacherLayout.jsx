@@ -1,3 +1,5 @@
+// teacher/TeacherLayout.jsx 
+
 import { useState, useEffect } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
@@ -13,6 +15,7 @@ const MENU = [
   { label: 'Exams', icon: '📝', path: '/teacher/exams' },
   { label: 'Events', icon: '🎉', path: '/teacher/events' },
   { label: 'Announcements', icon: '📢', path: '/teacher/announcements' },
+  { label: 'Focus Logs', icon: '👁️', path: '/teacher/focus-logs' },
   { label: 'Feedback', icon: '💬', path: '/teacher/feedback' },
   { label: 'Settings', icon: '⚙️', path: '/teacher/settings' },
 ]

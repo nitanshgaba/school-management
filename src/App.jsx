@@ -1,3 +1,5 @@
+// src/App.jsx 
+
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
 
@@ -46,6 +48,8 @@ import StudentExams from './pages/student/Exams'
 import StudentEvents from './pages/student/Events'
 import StudentAnnouncements from './pages/student/Announcements'
 import AssignmentAnalyzer from './pages/student/AssignmentAnalyzer'
+import FocusTracker from './pages/student/FocusTracker'
+import FocusLogs from './pages/teacher/FocusLogs'
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, profile, loading } = useAuth()
@@ -112,6 +116,7 @@ function App() {
           <Route path="feedback" element={<TeacherFeedback />} />
           <Route path="events" element={<TeacherEvents />} />
           <Route path="announcements" element={<TeacherAnnouncements />} />
+          <Route path="focus-logs" element={<FocusLogs />} />
         </Route>
 
         <Route path="/student" element={
@@ -130,6 +135,7 @@ function App() {
           <Route path="events" element={<StudentEvents />} />
           <Route path="announcements" element={<StudentAnnouncements />} />
           <Route path="assignment-analyzer" element={<AssignmentAnalyzer />} />
+          <Route path="focus-tracker" element={<FocusTracker />} />
           <Route path="settings" element={<StudentSettings />} />
         </Route>
 
