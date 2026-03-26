@@ -12,6 +12,7 @@ const MENU = [
   { label: 'Exams', icon: '📝', path: '/student/exams' },
   { label: 'Events', icon: '🎉', path: '/student/events' },
   { label: 'Announcements', icon: '📢', path: '/student/announcements' },
+  { label: 'AI Analyzer', icon: '🤖', path: '/student/assignment-analyzer' },
   { label: 'Feedback', icon: '💬', path: '/student/feedback' },
   { label: 'Settings', icon: '⚙️', path: '/student/settings' },
 ]

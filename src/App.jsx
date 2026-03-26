@@ -45,6 +45,7 @@ import StudentSettings from './pages/student/Settings'
 import StudentExams from './pages/student/Exams'
 import StudentEvents from './pages/student/Events'
 import StudentAnnouncements from './pages/student/Announcements'
+import AssignmentAnalyzer from './pages/student/AssignmentAnalyzer'
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, profile, loading } = useAuth()
@@ -128,6 +129,7 @@ function App() {
           <Route path="exams" element={<StudentExams />} />
           <Route path="events" element={<StudentEvents />} />
           <Route path="announcements" element={<StudentAnnouncements />} />
+          <Route path="assignment-analyzer" element={<AssignmentAnalyzer />} />
           <Route path="settings" element={<StudentSettings />} />
         </Route>
 
