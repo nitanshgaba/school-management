@@ -14,6 +14,7 @@ const navItems = [
   { path: '/admin/exams', label: 'Exams', icon: '📝' },
   { path: '/admin/marks', label: 'Marks', icon: '🏆' },
   { path: '/admin/analytics', label: 'Analytics', icon: '📊' },
+  { path: '/admin/fees', label: 'Fees', icon: '💰' },
   { path: '/admin/events', label: 'Events', icon: '🎉' },
   { path: '/admin/settings', label: 'Settings', icon: '⚙️' },
 ]

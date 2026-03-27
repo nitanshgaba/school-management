@@ -20,6 +20,7 @@ import Marks from './pages/admin/Marks'
 import Settings from './pages/admin/Settings'
 import AdminEvents from './pages/admin/Events'
 import AdminAnalytics from './pages/admin/Analytics'
+import AdminFees from './pages/admin/Fees'
 
 import TeacherLayout from './pages/teacher/TeacherLayout'
 import TeacherDashboard from './pages/teacher/Dashboard'
@@ -48,6 +49,7 @@ import StudentExams from './pages/student/Exams'
 import StudentEvents from './pages/student/Events'
 import StudentAnnouncements from './pages/student/Announcements'
 import AssignmentAnalyzer from './pages/student/AssignmentAnalyzer'
+import StudentFees from './pages/student/Fees'
 import FocusTracker from './pages/student/FocusTracker'
 import FocusLogs from './pages/teacher/FocusLogs'
 
@@ -97,6 +99,7 @@ function App() {
           <Route path="analytics" element={<AdminAnalytics />} />
           <Route path="events" element={<AdminEvents />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="fees" element={<AdminFees />} />
         </Route>
 
         <Route path="/teacher" element={
@@ -137,6 +140,7 @@ function App() {
           <Route path="assignment-analyzer" element={<AssignmentAnalyzer />} />
           <Route path="focus-tracker" element={<FocusTracker />} />
           <Route path="settings" element={<StudentSettings />} />
+          <Route path="fees" element={<StudentFees />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
