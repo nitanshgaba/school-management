@@ -18,6 +18,7 @@ const MENU = [
   { label: 'Events', icon: '🎉', path: '/student/events' },
   { label: 'Announcements', icon: '📢', path: '/student/announcements' },
   { label: 'AI Analyzer', icon: '🤖', path: '/student/assignment-analyzer' },
+  { label: 'Question Papers', icon: '📝', path: '/student/question-papers' },
   { label: 'Focus Tracker', icon: '👁️', path: '/student/focus-tracker' },
   { label: 'Feedback', icon: '💬', path: '/student/feedback' },
   { label: 'Settings', icon: '⚙️', path: '/student/settings' },

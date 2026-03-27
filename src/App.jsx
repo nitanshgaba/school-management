@@ -21,6 +21,7 @@ import Settings from './pages/admin/Settings'
 import AdminEvents from './pages/admin/Events'
 import AdminAnalytics from './pages/admin/Analytics'
 import AdminFees from './pages/admin/Fees'
+import AdminQuestionPapers from './pages/admin/QuestionPapers'
 
 import TeacherLayout from './pages/teacher/TeacherLayout'
 import TeacherDashboard from './pages/teacher/Dashboard'
@@ -50,7 +51,9 @@ import StudentEvents from './pages/student/Events'
 import StudentAnnouncements from './pages/student/Announcements'
 import AssignmentAnalyzer from './pages/student/AssignmentAnalyzer'
 import StudentFees from './pages/student/Fees'
+import StudentQuestionPapers from './pages/student/QuestionPapers'
 import FocusTracker from './pages/student/FocusTracker'
+import TeacherQuestionPaper from './pages/teacher/QuestionPaper'
 import FocusLogs from './pages/teacher/FocusLogs'
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -100,6 +103,7 @@ function App() {
           <Route path="events" element={<AdminEvents />} />
           <Route path="settings" element={<Settings />} />
           <Route path="fees" element={<AdminFees />} />
+          <Route path="question-papers" element={<AdminQuestionPapers />} />
         </Route>
 
         <Route path="/teacher" element={
@@ -120,6 +124,7 @@ function App() {
           <Route path="events" element={<TeacherEvents />} />
           <Route path="announcements" element={<TeacherAnnouncements />} />
           <Route path="focus-logs" element={<FocusLogs />} />
+          <Route path="question-paper" element={<TeacherQuestionPaper />} />
         </Route>
 
         <Route path="/student" element={
@@ -141,6 +146,7 @@ function App() {
           <Route path="focus-tracker" element={<FocusTracker />} />
           <Route path="settings" element={<StudentSettings />} />
           <Route path="fees" element={<StudentFees />} />
+          <Route path="question-papers" element={<StudentQuestionPapers />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

@@ -16,6 +16,7 @@ const MENU = [
   { label: 'Events', icon: '🎉', path: '/teacher/events' },
   { label: 'Announcements', icon: '📢', path: '/teacher/announcements' },
   { label: 'Focus Logs', icon: '👁️', path: '/teacher/focus-logs' },
+  { label: 'Question Paper', icon: '📝', path: '/teacher/question-paper' },
   { label: 'Feedback', icon: '💬', path: '/teacher/feedback' },
   { label: 'Settings', icon: '⚙️', path: '/teacher/settings' },
 ]

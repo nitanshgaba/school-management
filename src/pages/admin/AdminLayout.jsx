@@ -15,6 +15,7 @@ const navItems = [
   { path: '/admin/marks', label: 'Marks', icon: '🏆' },
   { path: '/admin/analytics', label: 'Analytics', icon: '📊' },
   { path: '/admin/fees', label: 'Fees', icon: '💰' },
+  { path: '/admin/question-papers', label: 'Question Papers', icon: '📝' },
   { path: '/admin/events', label: 'Events', icon: '🎉' },
   { path: '/admin/settings', label: 'Settings', icon: '⚙️' },
 ]
