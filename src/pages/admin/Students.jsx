@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
+import { useAuth } from '../../context/AuthContext'
+import { logActivity } from '../../lib/logActivity'
+import CSVImport from './CSVImport'
 
 const TABS = ['Add Students', 'Show Students', 'Feedback']
 
@@ -39,6 +42,7 @@ export default function Students() {
 }
 
 function AddStudents() {
+  const { profile } = useAuth()
   const [showForm, setShowForm] = useState(false)
   const [showRemove, setShowRemove] = useState(false)
   const [classes, setClasses] = useState([])
@@ -58,6 +62,7 @@ function AddStudents() {
     birthday: '', address: '', class_id: '', section_id: '', roll_no: generateRollNo()
   })
   const [loading, setLoading] = useState(false)
+  const [showCSV, setShowCSV] = useState(false)
   const [message, setMessage] = useState('')
 
   useEffect(() => {
@@ -127,6 +132,12 @@ function AddStudents() {
 
     setMessage(`✅ Student added! Student ID: ${studentId}`)
     setForm({ name: '', email: '', password: '', phone: '', gender: 'male', birthday: '', address: '', class_id: '', section_id: '', roll_no: generateRollNo() })
+    await logActivity({
+      performed_by: profile.id, performed_by_name: profile.name, role: 'admin',
+      action: 'Student Created', target_type: 'student',
+      target_name: form.name,
+      details: `Student ID: ${studentId}, Class: ${form.class_id || 'N/A'}`
+    })
     setLoading(false)
   }
 
@@ -134,6 +145,7 @@ function AddStudents() {
     <div>
       <div style={styles.sectionHeader}>
         <h2 style={styles.sectionTitle}>📋 Students</h2>
+        <button onClick={()=>setShowCSV(true)} style={{ padding:'8px 16px', background:'#0ea5e9', color:'#fff', border:'none', borderRadius:'8px', fontSize:'13px', fontWeight:'700', cursor:'pointer' }}>📥 Import CSV</button>
       </div>
 
       {!showForm && !showRemove ? (
@@ -219,6 +231,7 @@ function AddStudents() {
       ) : (
         <RemoveStudent onCancel={() => setShowRemove(false)} />
       )}
+      {showCSV && <CSVImport onClose={()=>setShowCSV(false)} onDone={()=>setShowCSV(false)} />}
     </div>
   )
 }
@@ -268,6 +281,7 @@ function RemoveStudent({ onCancel }) {
 }
 
 function ShowStudents() {
+  const { profile } = useAuth()
   const [classes, setClasses] = useState([])
   const [sections, setSections] = useState([])
   const [students, setStudents] = useState([])
@@ -306,8 +320,15 @@ function ShowStudents() {
 
   const handleDelete = async (id) => {
     if (!confirm('Are you sure?')) return
+    const student = students.find(s => s.id === id)
     await supabase.from('profiles').delete().eq('id', id)
     setStudents(students.filter(s => s.id !== id))
+    await logActivity({
+      performed_by: profile.id, performed_by_name: profile.name, role: 'admin',
+      action: 'Student Deleted', target_type: 'student',
+      target_name: student?.profiles?.name || 'Unknown',
+      details: `Student removed from system`
+    })
   }
 
   const handleEdit = async () => {
