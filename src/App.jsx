@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
 
 import Login from './pages/Login'
+import AccessDenied from './pages/AccessDenied'
 
 import AdminLayout from './pages/admin/AdminLayout'
 import Dashboard from './pages/admin/Dashboard'
@@ -62,7 +63,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   if (loading) return <div style={{ padding: '40px', textAlign: 'center' }}>Loading...</div>
   if (!user) return <Navigate to="/login" replace />
   if (allowedRoles && !allowedRoles.includes(profile?.role)) {
-    return <Navigate to="/login" replace />
+    return <AccessDenied />
   }
   return children
 }
