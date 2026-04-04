@@ -132,7 +132,9 @@ export default function AdminFees() {
     loadAssignments()
   }
 
-  const printReceipt = () => {
+  const printReceipt = async () => {
+    const { getSchoolSettings } = await import('../../lib/schoolSettings')
+    const school = await getSchoolSettings()
     const w = window.open('', '_blank')
     w.document.write(`
       <html><head><title>Fee Receipt</title><style>
@@ -155,7 +157,8 @@ export default function AdminFees() {
       </style></head><body>
       <div class="header">
         <div class="logo">SCHOOL<br/>LOGO</div>
-        <h1>Sunrise Public School</h1>
+        <h1>${school.school_name || 'School'}</h1>
+        ${school.tagline ? `<p style='margin:2px 0;font-size:13px;color:#666'>${school.tagline}</p>` : ''}
         <h3>Fee Payment Receipt</h3>
       </div>
       <div class="receipt-no">
@@ -177,6 +180,10 @@ export default function AdminFees() {
         <div class="sig"><div class="sig-line"></div><p>Collected By: ${receiptData.collectedBy}</p></div>
       </div>
       <script>window.onload=()=>{window.print()}<\/script>
+      ${school.bank_name ? `
+      <div style='margin-top:20px;padding-top:12px;border-top:1px solid #e5e7eb;font-size:12px;color:#6b7280'>
+        <strong>Bank Details:</strong> ${school.account_holder} | ${school.bank_name} | A/C: ${school.account_no} | IFSC: ${school.ifsc_code}
+      </div>` : ''}
       </body></html>
     `)
     w.document.close()

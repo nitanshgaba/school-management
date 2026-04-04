@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { getSchoolSettings } from '../../lib/schoolSettings'
 import { supabase } from '../../lib/supabase'
 
 const TABS = ['Upload Marks', 'View Marks', 'Report Card']

@@ -24,6 +24,7 @@ import AdminAnalytics from './pages/admin/Analytics'
 import AdminFees from './pages/admin/Fees'
 import AdminQuestionPapers from './pages/admin/QuestionPapers'
 import ActivityLog from './pages/admin/ActivityLog'
+import SchoolProfile from './pages/admin/SchoolProfile'
 
 import TeacherLayout from './pages/teacher/TeacherLayout'
 import TeacherDashboard from './pages/teacher/Dashboard'
@@ -107,6 +108,7 @@ function App() {
           <Route path="fees" element={<AdminFees />} />
           <Route path="question-papers" element={<AdminQuestionPapers />} />
           <Route path="activity-log" element={<ActivityLog />} />
+          <Route path="school-profile" element={<SchoolProfile />} />
         </Route>
 
         <Route path="/teacher" element={

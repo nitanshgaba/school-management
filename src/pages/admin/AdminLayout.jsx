@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { getSchoolSettings } from '../../lib/schoolSettings'
 
 const navItems = [
   { path: '/admin/dashboard', label: 'Dashboard', icon: '🏠' },
@@ -18,11 +19,20 @@ const navItems = [
   { path: '/admin/question-papers', label: 'Question Papers', icon: '📝' },
   { path: '/admin/activity-log', label: 'Activity Log', icon: '📋' },
   { path: '/admin/events', label: 'Events', icon: '🎉' },
+  { path: '/admin/school-profile', label: 'School Profile', icon: '🏫' },
   { path: '/admin/settings', label: 'Settings', icon: '⚙️' },
 ]
 
 export default function AdminLayout() {
   const { profile, logout } = useAuth()
+  const [schoolName, setSchoolName] = useState('ERP')
+  const [schoolLogo, setSchoolLogo] = useState('')
+  useEffect(() => {
+    getSchoolSettings().then(s => {
+      if (s?.school_name) setSchoolName(s.school_name)
+      if (s?.logo_url) setSchoolLogo(s.logo_url)
+    })
+  }, [])
   const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(true)
 
@@ -40,8 +50,8 @@ export default function AdminLayout() {
       <aside style={{ ...styles.sidebar, width: sidebarOpen ? '220px' : '0px', overflow: 'hidden' }}>
         {/* Logo */}
         <div style={styles.logo}>
-          <span style={styles.logoIcon}>🍊</span>
-          <span style={styles.logoText}>ERP</span>
+          {schoolLogo ? <img src={schoolLogo} style={{width:'32px',height:'32px',borderRadius:'50%',objectFit:'cover',marginRight:'8px'}} onError={e=>e.target.style.display='none'} /> : <span style={styles.logoIcon}>🍊</span>}
+          <span style={styles.logoText}>{schoolName}</span>
         </div>
 
         {/* Nav Items */}
@@ -154,7 +164,7 @@ const styles = {
     padding: '12px 8px',
     gap: '2px',
     flex: 1,
-  },
+  overflowY: 'auto', overflowX: 'hidden', },
   navItem: {
     display: 'flex',
     alignItems: 'center',

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { getSchoolSettings } from '../../lib/schoolSettings'
 import { FocusProvider } from '../../context/FocusContext'
 import FocusWidget from '../../components/FocusWidget'
 
@@ -29,6 +30,14 @@ export default function StudentLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const [collapsed, setCollapsed] = useState(false)
+  const [schoolName, setSchoolName] = useState('ERP')
+  const [schoolLogo, setSchoolLogo] = useState('')
+  useEffect(() => {
+    getSchoolSettings().then(s => {
+      if (s?.school_name) setSchoolName(s.school_name)
+      if (s?.logo_url) setSchoolLogo(s.logo_url)
+    })
+  }, [])
   const [showProfile, setShowProfile] = useState(false)
   const [studentInfo, setStudentInfo] = useState(null)
 
@@ -49,8 +58,8 @@ export default function StudentLayout() {
     <div style={styles.container}>
       <div style={{ ...styles.sidebar, width: collapsed ? '70px' : '220px' }}>
         <div style={styles.logo} onClick={() => setCollapsed(!collapsed)}>
-          {!collapsed && <span style={styles.logoText}>🍊 ERP</span>}
-          {collapsed && <span style={{ fontSize: '24px' }}>🍊</span>}
+          {!collapsed && <span style={styles.logoText}>{schoolName}</span>}
+          {collapsed && (schoolLogo ? <img src={schoolLogo} style={{width:'32px',height:'32px',borderRadius:'50%',objectFit:'cover'}} onError={e=>e.target.style.display='none'} /> : <span style={{fontSize:'20px',fontWeight:'800',color:'#fff'}}>{schoolName?.charAt(0)}</span>)}
         </div>
         <nav style={styles.nav}>
           {MENU.map(item => (

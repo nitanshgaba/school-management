@@ -135,7 +135,9 @@ Format it exactly like a real school question paper. Include instructions at the
     loadPapers()
   }
 
-  const printPaper = (paper) => {
+  const printPaper = async (paper) => {
+    const { getSchoolSettings } = await import('../../lib/schoolSettings')
+    const school = await getSchoolSettings()
     const w = window.open('', '_blank')
     const cls = classes.find(c => c.class_id === paper.class_id)
     w.document.write(`
@@ -153,7 +155,8 @@ Format it exactly like a real school question paper. Include instructions at the
       </style></head><body>
       <div class="header">
         <div class="logo">LOGO</div>
-        <h1>Sunrise Public School</h1>
+        <h1>${school.school_name || 'School'}</h1>
+        ${school.tagline ? `<h3 style='margin:2px 0;font-size:13px;font-weight:400'>${school.tagline}</h3>` : ''}
         <h2>${paper.subject_name} — ${paper.exam_type}</h2>
         <h2>Class ${cls?.classes?.name || paper.class_id}</h2>
       </div>

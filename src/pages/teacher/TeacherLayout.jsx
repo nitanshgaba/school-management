@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { getSchoolSettings } from '../../lib/schoolSettings'
 
 const MENU = [
   { label: 'Dashboard', icon: '📊', path: '/teacher/dashboard' },
@@ -26,6 +27,14 @@ export default function TeacherLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const [collapsed, setCollapsed] = useState(false)
+  const [schoolName, setSchoolName] = useState('ERP')
+  const [schoolLogo, setSchoolLogo] = useState('')
+  useEffect(() => {
+    getSchoolSettings().then(s => {
+      if (s?.school_name) setSchoolName(s.school_name)
+      if (s?.logo_url) setSchoolLogo(s.logo_url)
+    })
+  }, [])
   const [showProfile, setShowProfile] = useState(false)
   const [teacherInfo, setTeacherInfo] = useState(null)
 
@@ -48,8 +57,8 @@ export default function TeacherLayout() {
       {/* Sidebar */}
       <div style={{ ...styles.sidebar, width: collapsed ? '70px' : '220px' }}>
         <div style={styles.logo} onClick={() => setCollapsed(!collapsed)}>
-          {!collapsed && <span style={styles.logoText}>🍊 ERP</span>}
-          {collapsed && <span style={{ fontSize: '24px' }}>🍊</span>}
+          {!collapsed && <span style={styles.logoText}>{schoolName}</span>}
+          {collapsed && (schoolLogo ? <img src={schoolLogo} style={{width:'32px',height:'32px',borderRadius:'50%',objectFit:'cover'}} onError={e=>e.target.style.display='none'} /> : <span style={{fontSize:'20px',fontWeight:'800',color:'#fff'}}>{schoolName?.charAt(0)}</span>)}
         </div>
 
         <nav style={styles.nav}>
@@ -145,7 +154,7 @@ const styles = {
   sidebar: { backgroundColor: '#1a1a2e', display: 'flex', flexDirection: 'column', transition: 'width 0.3s', overflow: 'hidden', flexShrink: 0, position: 'relative', zIndex: 1 },
   logo: { padding: '20px 16px', cursor: 'pointer', borderBottom: '1px solid #ffffff15' },
   logoText: { fontSize: '20px', fontWeight: '800', color: '#fff' },
-  nav: { flex: 1, padding: '12px 8px', display: 'flex', flexDirection: 'column', gap: '4px' },
+  nav: { flex: 1, padding: '12px 8px', display: 'flex', flexDirection: 'column', gap: '4px', overflowY: 'auto', overflowX: 'hidden' },
   navItem: { display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', borderRadius: '8px', cursor: 'pointer', transition: 'all 0.2s', whiteSpace: 'nowrap' },
   navLabel: { fontSize: '14px', fontWeight: '500' },
   logoutBtn: { padding: '16px', display: 'flex', alignItems: 'center', gap: '12px', color: '#ef4444', cursor: 'pointer', fontSize: '14px', fontWeight: '600', borderTop: '1px solid #ffffff15' },

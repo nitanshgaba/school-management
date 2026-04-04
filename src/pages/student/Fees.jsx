@@ -1,6 +1,7 @@
 // src/pages/student/Fees.jsx
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext'
+import { getSchoolSettings } from '../../lib/schoolSettings'
 
 export default function StudentFees() {
   const { profile } = useAuth()
@@ -37,7 +38,8 @@ export default function StudentFees() {
     setLoading(false)
   }
 
-  const printReceipt = (pay) => {
+  const printReceipt = async (pay) => {
+    const school = await getSchoolSettings()
     const w = window.open('', '_blank')
     w.document.write(`
       <html><head><title>Fee Receipt</title><style>
@@ -60,7 +62,7 @@ export default function StudentFees() {
       </style></head><body>
       <div class="header">
         <div class="logo">SCHOOL<br/>LOGO</div>
-        <h1>Sunrise Public School</h1>
+        <h1>${school?.school_name || 'School'}</h1>
         <h3>Fee Payment Receipt</h3>
       </div>
       <div class="receipt-no">
