@@ -197,6 +197,8 @@
 // }
 
 
+
+
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
@@ -213,18 +215,23 @@ export default function TeacherAttendance() {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
 
-  useEffect(() => { fetchAssignedClasses() }, [])
+  useEffect(() => { if (profile?.id) fetchAssignedClasses() }, [profile])
 
   const fetchAssignedClasses = async () => {
     const { data } = await supabase
       .from('teacher_classes')
       .select('class_id, section_id, classes(id, name), sections(id, name)')
       .eq('teacher_id', profile.id)
+    
     const assignments = data || []
     const classMap = {}
     assignments.forEach(a => {
-      if (!classMap[a.class_id]) classMap[a.class_id] = { id: a.class_id, name: a.classes?.name, sections: [] }
-      if (a.section_id) classMap[a.class_id].sections.push({ id: a.section_id, name: a.sections?.name })
+      if (!classMap[a.class_id]) {
+        classMap[a.class_id] = { id: a.class_id, name: a.classes?.name, sections: [] }
+      }
+      if (a.section_id) {
+        classMap[a.class_id].sections.push({ id: a.section_id, name: a.sections?.name })
+      }
     })
     setClasses(Object.values(classMap))
   }
@@ -240,24 +247,41 @@ export default function TeacherAttendance() {
   const handleFind = async () => {
     if (!selectedClass) return
     setLoading(true)
-    const { data } = await supabase
+    setMessage('')
+    
+    // BUILD DYNAMIC QUERY
+    let query = supabase
       .from('students')
       .select('id, roll_no, profiles(name, avatar_url)')
       .eq('class_id', selectedClass)
-      .eq(selectedSection ? 'section_id' : 'class_id', selectedSection || selectedClass)
     
-    const studentList = data || []
-    setStudents(studentList)
+    if (selectedSection) {
+      query = query.eq('section_id', selectedSection)
+    }
 
+    const { data: studentList, error: stError } = await query
+    if (stError) {
+      console.error(stError)
+      setLoading(false)
+      return
+    }
+
+    setStudents(studentList || [])
+
+    // FETCH EXISTING ATTENDANCE FOR THIS DATE
     const { data: existing } = await supabase
       .from('attendance')
-      .select('*')
+      .select('student_id, status')
       .eq('date', date)
-      .in('student_id', studentList.map(s => s.id))
+      .in('student_id', (studentList || []).map(s => s.id))
 
+    // MAP ATTENDANCE (Default to present for new marks)
     const map = {}
     studentList.forEach(s => map[s.id] = 'present')
-    existing?.forEach(a => map[a.student_id] = a.status)
+    existing?.forEach(a => {
+      if (map[a.student_id]) map[a.student_id] = a.status
+    })
+    
     setAttendance(map)
     setLoading(false)
   }
@@ -265,21 +289,27 @@ export default function TeacherAttendance() {
   const handleSubmit = async () => {
     if (students.length === 0) return
     setLoading(true)
+    setMessage('')
+
     const records = students.map(s => ({
       student_id: s.id,
       class_id: selectedClass,
       section_id: selectedSection || null,
       date: date,
-      is_present: (attendance[s.id] || 'present') === 'present',
-      status: attendance[s.id] || 'present',
+      status: attendance[s.id] || 'present', // Saved as lowercase 'present', 'absent', 'late'
       marked_by: profile.id,
     }))
 
-    const { error } = await supabase.from('attendance').upsert(records, { onConflict: 'student_id,date' })
+    // UPSERT handles both new entries and updates for existing dates
+    const { error } = await supabase
+      .from('attendance')
+      .upsert(records, { onConflict: 'student_id,date' })
+
     if (error) {
-      setMessage('❌ Error: Could not save records.')
+      setMessage('❌ Error: ' + error.message)
     } else {
-      setMessage('✅ Attendance saved successfully!')
+      setMessage('✅ Attendance synced successfully!')
+      // Automatically hide success message after 3 seconds
       setTimeout(() => setMessage(''), 3000)
     }
     setLoading(false)
@@ -289,8 +319,8 @@ export default function TeacherAttendance() {
     <div style={styles.container}>
       <div style={styles.pageHeader}>
         <div>
-          <h1 style={styles.pageTitle}>Class Attendance</h1>
-          <p style={styles.pageSubtitle}>Mark and manage daily presence for your assigned classes</p>
+          <h1 style={styles.pageTitle}>Attendance Management</h1>
+          <p style={styles.pageSubtitle}>Mark and verify student presence for {new Date(date).toLocaleDateString('en-IN', { day: 'numeric', month: 'long' })}</p>
         </div>
       </div>
 
@@ -298,49 +328,44 @@ export default function TeacherAttendance() {
       <div style={styles.card}>
         <div style={styles.filterRow}>
           <div style={styles.filterGroup}>
-            <label style={styles.label}>Select Date</label>
+            <label style={styles.label}>Attendance Date</label>
             <input style={styles.input} type="date" value={date} onChange={e => setDate(e.target.value)} />
           </div>
           <div style={styles.filterGroup}>
-            <label style={styles.label}>Choose Class</label>
+            <label style={styles.label}>Class</label>
             <select style={styles.input} value={selectedClass} onChange={e => handleClassChange(e.target.value)}>
-              <option value="">-- Select --</option>
+              <option value="">-- Select Class --</option>
               {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </div>
           <div style={styles.filterGroup}>
             <label style={styles.label}>Section</label>
-            <select style={styles.input} value={selectedSection} onChange={e => setSelectedSection(e.target.value)}>
-              <option value="">-- All --</option>
+            <select style={styles.input} value={selectedSection} onChange={e => setSelectedSection(e.target.value)} disabled={!selectedClass}>
+              <option value="">-- All Sections --</option>
               {sections.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
           </div>
-          <button style={styles.findBtn} onClick={handleFind} disabled={!selectedClass}>
-            {loading && !students.length ? '⌛' : '🔍 Load Roster'}
+          <button style={styles.findBtn} onClick={handleFind} disabled={!selectedClass || loading}>
+            {loading ? '⌛' : '🔍 Load Roster'}
           </button>
         </div>
       </div>
 
       {students.length > 0 && (
-        <div style={{ ...styles.card, marginTop: '24px', animation: 'fadeIn 0.3s ease-in' }}>
+        <div style={{ ...styles.card, marginTop: '24px' }}>
           <div style={styles.tableHeader}>
             <h2 style={styles.sectionTitle}>
-              Student Roster 
-              <span style={styles.countBadge}>{students.length} Total</span>
+              Roll Call List
+              <span style={styles.countBadge}>{students.length} Students Found</span>
             </h2>
-            <div style={styles.legend}>
-              <span style={{ ...styles.badge, backgroundColor: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0' }}>Present</span>
-              <span style={{ ...styles.badge, backgroundColor: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca' }}>Absent</span>
-              <span style={{ ...styles.badge, backgroundColor: '#fffbeb', color: '#d97706', border: '1px solid #fde68a' }}>Late</span>
-            </div>
           </div>
 
           <div style={styles.tableWrapper}>
             <table style={styles.table}>
               <thead>
                 <tr>
-                  <th style={{ ...styles.th, width: '50px', textAlign: 'center' }}>#</th>
-                  <th style={styles.th}>Student Name</th>
+                  <th style={{ ...styles.th, width: '60px', textAlign: 'center' }}>#</th>
+                  <th style={styles.th}>Student Information</th>
                   <th style={{ ...styles.th, textAlign: 'right', paddingRight: '40px' }}>Mark Status</th>
                 </tr>
               </thead>
@@ -350,13 +375,9 @@ export default function TeacherAttendance() {
                     <td style={{ ...styles.td, textAlign: 'center', color: '#94a3b8', fontWeight: '600' }}>{i + 1}</td>
                     <td style={styles.td}>
                       <div style={styles.nameCell}>
-                        {s.profiles?.avatar_url ? (
-                          <img src={s.profiles.avatar_url} style={styles.avatar} alt="Avatar" />
-                        ) : (
-                          <div style={{ ...styles.avatar, backgroundColor: ['#4f46e5', '#10b981', '#f59e0b', '#ef4444'][i % 4] }}>
-                            {s.profiles?.name?.charAt(0).toUpperCase()}
-                          </div>
-                        )}
+                        <div style={{ ...styles.avatar, backgroundColor: ['#4f46e5', '#10b981', '#f59e0b', '#ef4444'][i % 4] }}>
+                          {s.profiles?.name?.charAt(0).toUpperCase()}
+                        </div>
                         <div>
                           <p style={styles.stName}>{s.profiles?.name}</p>
                           <p style={styles.stRoll}>Roll No: {s.roll_no || 'N/A'}</p>
@@ -366,9 +387,9 @@ export default function TeacherAttendance() {
                     <td style={styles.td}>
                       <div style={styles.statusBtns}>
                         {[
-                          { id: 'present', label: 'Present', color: '#10b981', bg: '#f0fdf4' },
-                          { id: 'absent', label: 'Absent', color: '#ef4444', bg: '#fef2f2' },
-                          { id: 'late', label: 'Late', color: '#f59e0b', bg: '#fffbeb' }
+                          { id: 'present', label: 'Present', color: '#10b981' },
+                          { id: 'absent', label: 'Absent', color: '#ef4444' },
+                          { id: 'late', label: 'Late', color: '#f59e0b' }
                         ].map(st => (
                           <button
                             key={st.id}
@@ -377,8 +398,8 @@ export default function TeacherAttendance() {
                               ...styles.statusBtn,
                               backgroundColor: attendance[s.id] === st.id ? st.color : '#f1f5f9',
                               color: attendance[s.id] === st.id ? '#fff' : '#64748b',
-                              boxShadow: attendance[s.id] === st.id ? `0 4px 10px ${st.color}40` : 'none',
                               fontWeight: attendance[s.id] === st.id ? '700' : '500',
+                              border: `1px solid ${attendance[s.id] === st.id ? st.color : '#e2e8f0'}`
                             }}
                           >
                             {st.label}
@@ -395,7 +416,7 @@ export default function TeacherAttendance() {
           <div style={styles.footerAction}>
             {message && <div style={{ ...styles.alert, backgroundColor: message.startsWith('✅') ? '#f0fdf4' : '#fef2f2', color: message.startsWith('✅') ? '#16a34a' : '#dc2626' }}>{message}</div>}
             <button style={styles.submitBtn} onClick={handleSubmit} disabled={loading}>
-              {loading ? '⌛ Saving Records...' : '💾 Submit Attendance'}
+              {loading ? '⌛ Saving...' : '💾 Submit Attendance'}
             </button>
           </div>
         </div>
@@ -409,37 +430,27 @@ const styles = {
   pageHeader: { marginBottom: '32px' },
   pageTitle: { fontSize: '32px', fontWeight: '800', color: '#111827', margin: 0, letterSpacing: '-0.5px' },
   pageSubtitle: { fontSize: '15px', color: '#64748b', margin: '4px 0 0' },
-
-  card: { backgroundColor: '#fff', borderRadius: '16px', padding: '24px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9' },
-  
+  card: { backgroundColor: '#fff', borderRadius: '16px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', border: '1px solid #f1f5f9' },
   filterRow: { display: 'flex', gap: '16px', alignItems: 'flex-end', flexWrap: 'wrap' },
   filterGroup: { display: 'flex', flexDirection: 'column', gap: '8px', flex: 1, minWidth: '160px' },
   label: { fontSize: '12px', fontWeight: '700', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' },
   input: { padding: '12px 14px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none', backgroundColor: '#fff', color: '#1e293b' },
-  
-  findBtn: { padding: '0 24px', backgroundColor: '#4f46e5', color: '#fff', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '14px', fontWeight: '700', height: '45px', transition: '0.2s', ':hover': { backgroundColor: '#4338ca' } },
-
-  tableHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' },
-  sectionTitle: { fontSize: '20px', fontWeight: '800', color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: '12px' },
-  countBadge: { fontSize: '12px', fontWeight: '700', color: '#6366f1', backgroundColor: '#eef2ff', padding: '4px 10px', borderRadius: '12px', border: '1px solid #c7d2fe' },
-  legend: { display: 'flex', gap: '8px' },
-  badge: { padding: '4px 12px', borderRadius: '20px', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase' },
-
+  findBtn: { padding: '0 24px', backgroundColor: '#4f46e5', color: '#fff', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '14px', fontWeight: '700', height: '45px' },
+  tableHeader: { marginBottom: '24px' },
+  sectionTitle: { fontSize: '18px', fontWeight: '800', color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: '12px' },
+  countBadge: { fontSize: '11px', fontWeight: '700', color: '#6366f1', backgroundColor: '#eef2ff', padding: '4px 10px', borderRadius: '12px' },
   tableWrapper: { borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden' },
   table: { width: '100%', borderCollapse: 'collapse' },
-  th: { textAlign: 'left', fontSize: '12px', color: '#64748b', fontWeight: '700', padding: '16px 20px', backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', textTransform: 'uppercase' },
-  tr: { borderBottom: '1px solid #f1f5f9', transition: '0.15s' },
-  td: { padding: '12px 20px', fontSize: '15px', color: '#1e293b', verticalAlign: 'middle' },
-
+  th: { textAlign: 'left', fontSize: '12px', color: '#64748b', fontWeight: '700', padding: '16px 20px', backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' },
+  tr: { borderBottom: '1px solid #f1f5f9' },
+  td: { padding: '12px 20px', verticalAlign: 'middle' },
   nameCell: { display: 'flex', alignItems: 'center', gap: '12px' },
-  avatar: { width: '40px', height: '40px', borderRadius: '50%', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px', fontWeight: '800', objectFit: 'cover' },
-  stName: { margin: 0, fontWeight: '700', color: '#1e293b' },
+  avatar: { width: '40px', height: '40px', borderRadius: '50%', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px', fontWeight: '800' },
+  stName: { margin: 0, fontWeight: '700', color: '#1e293b', fontSize: '15px' },
   stRoll: { margin: 0, fontSize: '11px', color: '#94a3b8', fontWeight: '600' },
-
   statusBtns: { display: 'flex', gap: '8px', justifyContent: 'flex-end' },
-  statusBtn: { padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '12px', transition: 'all 0.2s', textTransform: 'uppercase', letterSpacing: '0.5px' },
-
-  footerAction: { marginTop: '32px', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '12px' },
+  statusBtn: { padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '11px', textTransform: 'uppercase' },
+  footerAction: { marginTop: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
   alert: { padding: '10px 20px', borderRadius: '8px', fontSize: '14px', fontWeight: '600' },
-  submitBtn: { padding: '14px 32px', backgroundColor: '#0f172a', color: '#fff', border: 'none', borderRadius: '12px', cursor: 'pointer', fontSize: '15px', fontWeight: '700', boxShadow: '0 4px 12px rgba(15, 23, 42, 0.2)' },
+  submitBtn: { padding: '14px 32px', backgroundColor: '#0f172a', color: '#fff', border: 'none', borderRadius: '12px', cursor: 'pointer', fontWeight: '700' },
 }

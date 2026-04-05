@@ -172,6 +172,218 @@
 // }
 
 
+// import { useState, useEffect } from 'react'
+// import { supabase } from '../../lib/supabase'
+// import { useAuth } from '../../context/AuthContext'
+
+// export default function TeacherNotes() {
+//   const { profile } = useAuth()
+//   const [notes, setNotes] = useState([])
+//   const [classes, setClasses] = useState([])
+//   const [subjects, setSubjects] = useState([])
+//   const [loading, setLoading] = useState(true)
+//   const [uploading, setUploading] = useState(false)
+//   const [showForm, setShowForm] = useState(false)
+//   const [message, setMessage] = useState('')
+//   const [form, setForm] = useState({ title: '', class_id: '', subject_id: '' })
+//   const [file, setFile] = useState(null)
+
+//   useEffect(() => { fetchData() }, [])
+
+//   const fetchData = async () => {
+//     const [{ data: n }, { data: c }, { data: s }] = await Promise.all([
+//       supabase.from('notes').select('*, classes(name), subjects(name)').order('created_at', { ascending: false }),
+//       supabase.from('classes').select('*'),
+//       supabase.from('subjects').select('*').eq('teacher_id', profile.id),
+//     ])
+//     setNotes(n || [])
+//     setClasses(c || [])
+//     setSubjects(s || [])
+//     setLoading(false)
+//   }
+
+//   const handleUpload = async () => {
+//     if (!form.title || !form.class_id) { setMessage('❌ Title and class are required'); return }
+//     setUploading(true)
+//     setMessage('')
+//     let file_url = null
+
+//     if (file) {
+//       const ext = file.name.split('.').pop()
+//       const fileName = `note_${Date.now()}.${ext}`
+//       const { error: uploadError } = await supabase.storage.from('notes-files').upload(fileName, file)
+//       if (uploadError) { setMessage('❌ File upload failed: ' + uploadError.message); setUploading(false); return }
+//       const { data: urlData } = supabase.storage.from('notes-files').getPublicUrl(fileName)
+//       file_url = urlData.publicUrl
+//     }
+
+//     const { data, error } = await supabase.from('notes').insert({
+//       title: form.title,
+//       class_id: form.class_id || null,
+//       subject_id: form.subject_id || null,
+//       file_url,
+//     }).select('*, classes(name), subjects(name)').single()
+
+//     if (error) { setMessage('❌ Error saving note: ' + error.message); setUploading(false); return }
+//     setNotes([data, ...notes])
+//     setForm({ title: '', class_id: '', subject_id: '' })
+//     setFile(null)
+//     setShowForm(false)
+//     setMessage('✅ Note uploaded successfully!')
+//     setTimeout(() => setMessage(''), 3000)
+//     setUploading(false)
+//   }
+
+//   const handleDelete = async (id, fileUrl) => {
+//     if (!confirm('Are you sure you want to delete this note?')) return
+//     if (fileUrl) {
+//       const fileName = fileUrl.split('/').pop()
+//       await supabase.storage.from('notes-files').remove([fileName])
+//     }
+//     await supabase.from('notes').delete().eq('id', id)
+//     setNotes(notes.filter(n => n.id !== id))
+//   }
+
+//   if (loading) return <div style={styles.loadingBox}>⌛ Loading your resource library...</div>
+
+//   return (
+//     <div style={styles.container}>
+//       <div style={styles.pageHeader}>
+//         <div>
+//           <h1 style={styles.pageTitle}>Study Materials</h1>
+//           <p style={styles.pageSubtitle}>Manage and share lecture notes and digital resources with your classes</p>
+//         </div>
+//         <button
+//           style={{ ...styles.addBtn, backgroundColor: showForm ? '#64748b' : '#4f46e5' }}
+//           onClick={() => setShowForm(!showForm)}
+//         >
+//           {showForm ? '✕ Close Form' : '＋ Add New Note'}
+//         </button>
+//       </div>
+
+//       {message && (
+//         <div style={{
+//           ...styles.alert,
+//           backgroundColor: message.startsWith('✅') ? '#f0fdf4' : '#fef2f2',
+//           color: message.startsWith('✅') ? '#16a34a' : '#dc2626',
+//           border: `1px solid ${message.startsWith('✅') ? '#bbf7d0' : '#fecaca'}`
+//         }}>
+//           {message}
+//         </div>
+//       )}
+
+//       {showForm && (
+//         <div style={styles.formCard}>
+//           <h2 style={styles.cardTitle}>Upload Study Resource</h2>
+//           <div style={styles.formGrid}>
+//             <div style={styles.formGroup}>
+//               <label style={styles.label}>Note Title *</label>
+//               <input style={styles.input} value={form.title}
+//                 onChange={e => setForm({ ...form, title: e.target.value })}
+//                 placeholder="e.g. Chapter 3 — Algebra Notes" />
+//             </div>
+//             <div style={styles.formGroup}>
+//               <label style={styles.label}>Assign to Class *</label>
+//               <select style={styles.input} value={form.class_id} onChange={e => setForm({ ...form, class_id: e.target.value })}>
+//                 <option value="">-- Select Class --</option>
+//                 {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+//               </select>
+//             </div>
+//             <div style={styles.formGroup}>
+//               <label style={styles.label}>Subject</label>
+//               <select style={styles.input} value={form.subject_id} onChange={e => setForm({ ...form, subject_id: e.target.value })}>
+//                 <option value="">-- Select Subject --</option>
+//                 {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+//               </select>
+//             </div>
+//             <div style={styles.formGroup}>
+//               <label style={styles.label}>Upload File (PDF/DOC)</label>
+//               <input style={styles.fileInput} type="file" accept=".pdf,.doc,.docx"
+//                 onChange={e => setFile(e.target.files[0])} />
+//             </div>
+//           </div>
+//           <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
+//             <button style={styles.submitBtn} onClick={handleUpload} disabled={uploading}>
+//               {uploading ? '⌛ Uploading...' : '🚀 Publish Note'}
+//             </button>
+//           </div>
+//         </div>
+//       )}
+
+//       <div style={styles.listSection}>
+//         {notes.length === 0 ? (
+//           <div style={styles.emptyState}>
+//             <div style={{ fontSize: '56px', marginBottom: '16px' }}>📑</div>
+//             <h3 style={{ color: '#0f172a', margin: '0 0 8px 0' }}>Empty Library</h3>
+//             <p style={{ color: '#64748b', margin: 0 }}>No study materials uploaded yet.</p>
+//           </div>
+//         ) : (
+//           <div style={styles.grid}>
+//             {notes.map((n, index) => (
+//               <div key={n.id} style={styles.noteCard}>
+//                 <div style={{ ...styles.iconBox, backgroundColor: ['#eff6ff', '#f5f3ff', '#fff1f2', '#f0fdf4'][index % 4] }}>
+//                   <span style={{ fontSize: '24px' }}>📝</span>
+//                 </div>
+//                 <div style={styles.noteInfo}>
+//                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+//                     <h3 style={styles.noteTitle}>{n.title}</h3>
+//                     <span style={styles.classBadge}>Class {n.classes?.name}</span>
+//                   </div>
+//                   <p style={styles.noteMeta}>
+//                     <span style={{ color: '#4f46e5', fontWeight: '600' }}>{n.subjects?.name || 'General'}</span>
+//                     <span style={{ margin: '0 8px', color: '#cbd5e1' }}>•</span>
+//                     <span>{new Date(n.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</span>
+//                   </p>
+//                 </div>
+//                 <div style={styles.noteActions}>
+//                   {n.file_url && (
+//                     <a href={n.file_url} target="_blank" rel="noreferrer" style={styles.viewBtn}>📥 Download</a>
+//                   )}
+//                   <button style={styles.deleteBtn} onClick={() => handleDelete(n.id, n.file_url)}>🗑️</button>
+//                 </div>
+//               </div>
+//             ))}
+//           </div>
+//         )}
+//       </div>
+//     </div>
+//   )
+// }
+
+// const styles = {
+//   container: { maxWidth: '1000px', margin: '0 auto', padding: '20px', fontFamily: 'Inter, sans-serif' },
+//   loadingBox: { textAlign: 'center', padding: '100px', color: '#64748b', fontSize: '16px', fontWeight: '600' },
+//   pageHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px', flexWrap: 'wrap', gap: '20px' },
+//   pageTitle: { fontSize: '32px', fontWeight: '800', color: '#111827', margin: 0, letterSpacing: '-0.5px' },
+//   pageSubtitle: { fontSize: '15px', color: '#64748b', margin: '4px 0 0' },
+//   addBtn: { padding: '12px 24px', color: '#fff', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: '700', fontSize: '14px' },
+//   alert: { padding: '14px 20px', borderRadius: '12px', marginBottom: '24px', fontSize: '14px', fontWeight: '600' },
+//   formCard: { backgroundColor: '#fff', borderRadius: '16px', padding: '28px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', border: '1px solid #f1f5f9', marginBottom: '32px' },
+//   cardTitle: { fontSize: '18px', fontWeight: '800', color: '#1e293b', marginBottom: '24px' },
+//   formGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '16px' },
+//   formGroup: { display: 'flex', flexDirection: 'column', gap: '8px' },
+//   label: { fontSize: '12px', fontWeight: '700', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' },
+//   input: { padding: '12px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none', color: '#1e293b' },
+//   fileInput: { padding: '8px', fontSize: '13px', color: '#64748b' },
+//   submitBtn: { padding: '12px 28px', backgroundColor: '#10b981', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '700', fontSize: '14px' },
+//   listSection: {},
+//   grid: { display: 'flex', flexDirection: 'column', gap: '16px' },
+//   noteCard: { backgroundColor: '#fff', borderRadius: '16px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', gap: '20px', border: '1px solid #f1f5f9' },
+//   iconBox: { width: '56px', height: '56px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+//   noteInfo: { flex: 1 },
+//   noteTitle: { fontSize: '17px', fontWeight: '800', color: '#0f172a', margin: 0 },
+//   classBadge: { backgroundColor: '#f1f5f9', color: '#475569', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: '700' },
+//   noteMeta: { fontSize: '13px', color: '#94a3b8', margin: '4px 0', display: 'flex', alignItems: 'center' },
+//   noteActions: { display: 'flex', gap: '12px', alignItems: 'center', flexShrink: 0 },
+//   viewBtn: { padding: '8px 16px', backgroundColor: '#eef2ff', color: '#4f46e5', borderRadius: '8px', fontSize: '13px', textDecoration: 'none', fontWeight: '700', border: '1px solid #c7d2fe' },
+//   deleteBtn: { background: '#fef2f2', border: '1px solid #fecaca', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontSize: '16px' },
+//   emptyState: { textAlign: 'center', padding: '80px 20px', border: '2px dashed #e2e8f0', borderRadius: '20px', backgroundColor: '#fafaf9' },
+// }
+
+
+
+
+
 
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
@@ -186,217 +398,197 @@ export default function TeacherNotes() {
   const [uploading, setUploading] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [message, setMessage] = useState('')
-  const [form, setForm] = useState({ title: '', class_id: '', subject_id: '', description: '' })
+  const [form, setForm] = useState({ title: '', class_id: '', subject_id: '', body: '' })
   const [file, setFile] = useState(null)
 
-  useEffect(() => { fetchData() }, [])
+  useEffect(() => {
+    if (profile?.id) fetchData()
+  }, [profile?.id])
 
   const fetchData = async () => {
-    const [{ data: n }, { data: c }, { data: s }] = await Promise.all([
-      supabase.from('notes').select('*, classes(name), subjects(name)').eq('teacher_id', profile.id).order('created_at', { ascending: false }),
-      supabase.from('classes').select('*'),
-      supabase.from('subjects').select('*').eq('teacher_id', profile.id),
-    ])
-    setNotes(n || [])
-    setClasses(c || [])
-    setSubjects(s || [])
-    setLoading(false)
+    setLoading(true)
+    try {
+      // 1. Fetch data separately to avoid "relationship not found" errors
+      const [notesRes, classesRes, subjectsRes] = await Promise.all([
+        supabase.from('notes').select('*').eq('uploaded_by', profile.id).order('created_at', { ascending: false }),
+        supabase.from('classes').select('id, name'),
+        // Your subject table might use teacher_id or uploaded_by, adjust if needed
+        supabase.from('subjects').select('id, name').eq('teacher_id', profile.id)
+      ])
+
+      setClasses(classesRes.data || [])
+      setSubjects(subjectsRes.data || [])
+
+      // 2. Manually map Class names to the Notes for the UI
+      const mappedNotes = (notesRes.data || []).map(note => ({
+        ...note,
+        className: classesRes.data?.find(c => c.id === note.class_id)?.name || 'N/A',
+        subjectName: subjectsRes.data?.find(s => s.id === note.subject_id)?.name || 'General'
+      }))
+
+      setNotes(mappedNotes)
+    } catch (err) {
+      console.error("Data Load Error:", err)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleUpload = async () => {
-    if (!form.title || !form.class_id) { setMessage('❌ Title and class are required'); return }
+    if (!form.title || !form.class_id || !file) { 
+      setMessage('❌ Title, Class, and File are required'); 
+      return 
+    }
+    
     setUploading(true)
     setMessage('')
-    let file_url = null
 
-    if (file) {
-      const ext = file.name.split('.').pop()
-      const fileName = `note_${Date.now()}.${ext}`
-      const { error: uploadError } = await supabase.storage.from('notes-files').upload(fileName, file)
-      if (uploadError) { setMessage('❌ File upload failed'); setUploading(false); return }
-      const { data: urlData } = supabase.storage.from('notes-files').getPublicUrl(fileName)
-      file_url = urlData.publicUrl
+    try {
+      // Create unique path in storage
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${Date.now()}_${file.name.replace(/[^a-z0-9]/gi, '_')}`
+      const filePath = `${profile.id}/${fileName}`
+
+      // Upload to your 'notes-files' bucket
+      const { error: uploadError } = await supabase.storage
+        .from('notes-files')
+        .upload(filePath, file)
+
+      if (uploadError) throw uploadError
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('notes-files')
+        .getPublicUrl(filePath)
+
+      // 3. INSERT - Using 'uploaded_by' to match your SQL Schema screenshot
+      const { data: insertedData, error: dbError } = await supabase
+        .from('notes')
+        .insert([{
+          title: form.title,
+          body: form.body, // Added body column from your schema
+          class_id: form.class_id,
+          subject_id: form.subject_id || null,
+          file_url: publicUrl,
+          uploaded_by: profile.id, // MATCHES YOUR SCHEMA
+          file_size: (file.size / 1024).toFixed(1) + ' KB' // Optional: filling file_size
+        }])
+        .select()
+        .single()
+
+      if (dbError) throw dbError
+
+      // Update UI
+      const newNote = {
+        ...insertedData,
+        className: classes.find(c => c.id === insertedData.class_id)?.name || 'N/A',
+        subjectName: subjects.find(s => s.id === insertedData.subject_id)?.name || 'General'
+      }
+
+      setNotes([newNote, ...notes])
+      setForm({ title: '', class_id: '', subject_id: '', body: '' })
+      setFile(null)
+      setShowForm(false)
+      setMessage('✅ Study material published!')
+    } catch (err) {
+      setMessage(`❌ Error: ${err.message}`)
+    } finally {
+      setUploading(false)
     }
-
-    const { data, error } = await supabase.from('notes').insert({
-      title: form.title,
-      class_id: form.class_id || null,
-      subject_id: form.subject_id || null,
-      teacher_id: profile.id,
-      description: form.description,
-      file_url,
-    }).select('*, classes(name), subjects(name)').single()
-
-    if (error) { setMessage('❌ Error saving note'); setUploading(false); return }
-    setNotes([data, ...notes])
-    setForm({ title: '', class_id: '', subject_id: '', description: '' })
-    setFile(null)
-    setShowForm(false)
-    setMessage('✅ Note uploaded successfully!')
-    setTimeout(() => setMessage(''), 3000)
-    setUploading(false)
   }
 
   const handleDelete = async (id, fileUrl) => {
-    if (!confirm('Are you sure you want to delete this study note?')) return
-    if (fileUrl) {
-      const fileName = fileUrl.split('/').pop()
-      await supabase.storage.from('notes-files').remove([fileName])
-    }
-    await supabase.from('notes').delete().eq('id', id)
-    setNotes(notes.filter(n => n.id !== id))
+    if (!confirm('Delete this material?')) return
+    try {
+      if (fileUrl) {
+        const path = fileUrl.split('/notes-files/')[1]
+        if (path) await supabase.storage.from('notes-files').remove([path])
+      }
+      await supabase.from('notes').delete().eq('id', id)
+      setNotes(prev => prev.filter(n => n.id !== id))
+    } catch (err) { alert(err.message) }
   }
 
-  if (loading) return <div style={styles.loadingBox}>⌛ Loading your resource library...</div>
+  if (loading) return <div style={styles.loadingBox}>⌛ Loading library...</div>
 
   return (
     <div style={styles.container}>
       <div style={styles.pageHeader}>
         <div>
           <h1 style={styles.pageTitle}>Study Materials</h1>
-          <p style={styles.pageSubtitle}>Manage and share lecture notes and digital resources with your classes</p>
+          <p style={styles.pageSubtitle}>Manage digital resources for your classes</p>
         </div>
-        <button 
-          style={{ ...styles.addBtn, backgroundColor: showForm ? '#64748b' : '#4f46e5' }} 
-          onClick={() => setShowForm(!showForm)}
-        >
-          {showForm ? '✕ Close Form' : '＋ Add New Note'}
+        <button style={styles.addBtn} onClick={() => setShowForm(!showForm)}>
+          {showForm ? '✕ Close' : '＋ Add Material'}
         </button>
       </div>
 
-      {message && (
-        <div style={{ 
-          ...styles.alert, 
-          backgroundColor: message.startsWith('✅') ? '#f0fdf4' : '#fef2f2',
-          color: message.startsWith('✅') ? '#16a34a' : '#dc2626',
-          border: `1px solid ${message.startsWith('✅') ? '#bbf7d0' : '#fecaca'}`
-        }}>
-          {message}
-        </div>
-      )}
+      {message && <div style={{...styles.alert, color: message.startsWith('✅') ? '#10b981' : '#ef4444'}}>{message}</div>}
 
       {showForm && (
         <div style={styles.formCard}>
-          <h2 style={styles.cardTitle}>Upload Study Resource</h2>
           <div style={styles.formGrid}>
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Note Title *</label>
-              <input style={styles.input} value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="e.g. Intro to Quantum Mechanics" />
+            <div style={styles.fGroup}>
+               <label style={styles.fLabel}>Document Title</label>
+               <input style={styles.input} value={form.title} onChange={e => setForm({...form, title: e.target.value})} placeholder="e.g. Chapter 1 Notes" />
             </div>
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Assign to Class *</label>
-              <select style={styles.input} value={form.class_id} onChange={e => setForm({ ...form, class_id: e.target.value })}>
-                <option value="">-- Select Class --</option>
-                {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
+            <div style={styles.fGroup}>
+               <label style={styles.fLabel}>Class</label>
+               <select style={styles.input} value={form.class_id} onChange={e => setForm({...form, class_id: e.target.value})}>
+                 <option value="">Select Class</option>
+                 {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+               </select>
             </div>
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Subject</label>
-              <select style={styles.input} value={form.subject_id} onChange={e => setForm({ ...form, subject_id: e.target.value })}>
-                <option value="">-- Select Subject --</option>
-                {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
-            </div>
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Upload File (PDF/DOC)</label>
-              <input style={styles.fileInput} type="file" accept=".pdf,.doc,.docx" onChange={e => setFile(e.target.files[0])} />
+            <div style={styles.fGroup}>
+               <label style={styles.fLabel}>File</label>
+               <input type="file" onChange={e => setFile(e.target.files[0])} style={styles.input} />
             </div>
           </div>
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Brief Description</label>
-            <textarea style={styles.textarea} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="What should students know about this note?" />
+          <div style={{marginTop: '15px'}}>
+             <label style={styles.fLabel}>Notes / Description</label>
+             <textarea style={{...styles.input, width:'100%', height:'80px'}} value={form.body} onChange={e => setForm({...form, body: e.target.value})} placeholder="Enter additional details..." />
           </div>
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
-            <button style={styles.submitBtn} onClick={handleUpload} disabled={uploading}>
-              {uploading ? '⌛ Uploading...' : '🚀 Publish Note'}
-            </button>
-          </div>
+          <button style={styles.submitBtn} onClick={handleUpload} disabled={uploading}>{uploading ? 'Processing...' : '🚀 Publish Material'}</button>
         </div>
       )}
 
-      <div style={styles.listSection}>
-        {notes.length === 0 ? (
-          <div style={styles.emptyState}>
-            <div style={{ fontSize: '56px', marginBottom: '16px' }}>📑</div>
-            <h3 style={{ color: '#0f172a', margin: '0 0 8px 0' }}>Empty Library</h3>
-            <p style={{ color: '#64748b', margin: 0 }}>You haven't uploaded any study materials yet.</p>
-          </div>
-        ) : (
-          <div style={styles.grid}>
-            {notes.map((n, index) => (
-              <div key={n.id} style={styles.noteCard}>
-                <div style={{ ...styles.iconBox, backgroundColor: ['#eff6ff', '#f5f3ff', '#fff1f2', '#f0fdf4'][index % 4] }}>
-                  <span style={{ fontSize: '24px' }}>📝</span>
-                </div>
-                <div style={styles.noteInfo}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                    <h3 style={styles.noteTitle}>{n.title}</h3>
-                    <span style={styles.classBadge}>Class {n.classes?.name}</span>
-                  </div>
-                  <p style={styles.noteMeta}>
-                    <span style={{ color: '#4f46e5', fontWeight: '600' }}>{n.subjects?.name || 'General'}</span>
-                    <span style={{ margin: '0 8px', color: '#cbd5e1' }}>•</span>
-                    <span>Created {new Date(n.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</span>
-                  </p>
-                  {n.description && <p style={styles.noteDesc}>{n.description}</p>}
-                </div>
-                <div style={styles.noteActions}>
-                  {n.file_url && (
-                    <a href={n.file_url} target="_blank" rel="noreferrer" style={styles.viewBtn}>
-                      📥 Download
-                    </a>
-                  )}
-                  <button style={styles.deleteBtn} onClick={() => handleDelete(n.id, n.file_url)} title="Delete note">
-                    🗑️
-                  </button>
-                </div>
+      <div style={styles.grid}>
+        {notes.length === 0 ? <p style={{textAlign: 'center', padding: '60px', color: '#94a3b8'}}>No study materials found.</p> : 
+          notes.map(n => (
+            <div key={n.id} style={styles.noteCard}>
+              <div style={styles.noteInfo}>
+                <h3 style={styles.noteTitle}>{n.title}</h3>
+                <p style={styles.noteMeta}>Class: {n.className} • {n.subjectName}</p>
+                {n.body && <p style={{fontSize:'12px', color:'#94a3b8', marginTop:'5px'}}>{n.body}</p>}
               </div>
-            ))}
-          </div>
-        )}
+              <div style={styles.noteActions}>
+                <a href={n.file_url} target="_blank" rel="noreferrer" style={styles.viewBtn}>View</a>
+                <button onClick={() => handleDelete(n.id, n.file_url)} style={styles.deleteBtn}>Delete</button>
+              </div>
+            </div>
+          ))
+        }
       </div>
     </div>
   )
 }
 
 const styles = {
-  container: { maxWidth: '1000px', margin: '0 auto', padding: '20px', fontFamily: 'Inter, sans-serif' },
-  loadingBox: { textAlign: 'center', padding: '100px', color: '#64748b', fontSize: '16px', fontWeight: '600' },
-  
-  pageHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px', flexWrap: 'wrap', gap: '20px' },
-  pageTitle: { fontSize: '32px', fontWeight: '800', color: '#111827', margin: 0, letterSpacing: '-0.5px' },
-  pageSubtitle: { fontSize: '15px', color: '#64748b', margin: '4px 0 0' },
-  
-  addBtn: { padding: '12px 24px', color: '#fff', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: '700', fontSize: '14px', transition: '0.2s', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' },
-  
-  alert: { padding: '14px 20px', borderRadius: '12px', marginBottom: '24px', fontSize: '14px', fontWeight: '600', animation: 'fadeIn 0.3s ease-in' },
-
-  formCard: { backgroundColor: '#fff', borderRadius: '16px', padding: '28px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', border: '1px solid #f1f5f9', marginBottom: '32px', animation: 'slideDown 0.3s ease-out' },
-  cardTitle: { fontSize: '18px', fontWeight: '800', color: '#1e293b', marginBottom: '24px' },
-  
-  formGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '16px' },
-  formGroup: { display: 'flex', flexDirection: 'column', gap: '8px' },
-  label: { fontSize: '12px', fontWeight: '700', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' },
-  input: { padding: '12px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none', color: '#1e293b', transition: 'border-color 0.2s' },
-  fileInput: { padding: '8px', fontSize: '13px', color: '#64748b' },
-  textarea: { padding: '12px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none', height: '100px', resize: 'vertical', fontFamily: 'inherit' },
-  submitBtn: { padding: '12px 28px', backgroundColor: '#10b981', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '700', fontSize: '14px', boxShadow: '0 4px 10px rgba(16, 185, 129, 0.2)' },
-
-  listSection: { animation: 'fadeIn 0.4s ease-in' },
+  container: { padding: '32px', maxWidth: '1000px', margin: '0 auto', fontFamily: 'Inter, sans-serif' },
+  pageHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' },
+  pageTitle: { fontSize: '28px', fontWeight: '800', margin: 0 },
+  addBtn: { padding: '12px 24px', background: '#4f46e5', color: '#fff', border: 'none', borderRadius: '12px', cursor: 'pointer', fontWeight: '700' },
+  formCard: { background: '#fff', padding: '32px', borderRadius: '20px', border: '1px solid #f1f5f9', boxShadow: '0 4px 20px rgba(0,0,0,0.03)', marginBottom: '32px' },
+  formGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' },
+  fGroup: { display: 'flex', flexDirection: 'column', gap: '5px' },
+  fLabel: { fontSize: '11px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase' },
+  input: { padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '14px', outline: 'none' },
+  submitBtn: { padding: '14px 28px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '700', width: '100%', marginTop: '20px' },
+  alert: { padding: '16px', borderRadius: '12px', marginBottom: '24px', fontWeight: '700', background: '#f8fafc', border: '1px solid #e2e8f0' },
   grid: { display: 'flex', flexDirection: 'column', gap: '16px' },
-  
-  noteCard: { backgroundColor: '#fff', borderRadius: '16px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', gap: '20px', border: '1px solid #f1f5f9', transition: 'transform 0.2s', ':hover': { transform: 'translateY(-2px)', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' } },
-  iconBox: { width: '56px', height: '56px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-  
-  noteInfo: { flex: 1 },
-  noteTitle: { fontSize: '17px', fontWeight: '800', color: '#0f172a', margin: 0 },
-  classBadge: { backgroundColor: '#f1f5f9', color: '#475569', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: '700' },
-  noteMeta: { fontSize: '13px', color: '#94a3b8', margin: '4px 0', display: 'flex', alignItems: 'center' },
-  noteDesc: { fontSize: '14px', color: '#64748b', margin: '8px 0 0', lineHeight: '1.5' },
-  
-  noteActions: { display: 'flex', gap: '12px', alignItems: 'center' },
-  viewBtn: { padding: '8px 16px', backgroundColor: '#eef2ff', color: '#4f46e5', borderRadius: '8px', fontSize: '13px', textDecoration: 'none', fontWeight: '700', border: '1px solid #c7d2fe', transition: 'all 0.2s' },
-  deleteBtn: { background: '#fef2f2', border: '1px solid #fecaca', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontSize: '16px', transition: '0.2s' },
-
-  emptyState: { textAlign: 'center', padding: '80px 20px', border: '2px dashed #e2e8f0', borderRadius: '20px', backgroundColor: '#fafaf9' },
+  noteCard: { background: '#fff', padding: '24px', borderRadius: '16px', border: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+  noteTitle: { margin: 0, fontSize: '17px', fontWeight: '700' },
+  noteMeta: { margin: '4px 0 0', color: '#64748b', fontSize: '13px' },
+  viewBtn: { textDecoration: 'none', color: '#4f46e5', fontWeight: '700', padding: '8px 16px', background: '#eff6ff', borderRadius: '8px' },
+  deleteBtn: { background: 'none', border: 'none', color: '#ef4444', fontWeight: '600', cursor: 'pointer' },
+  loadingBox: { textAlign: 'center', padding: '100px' }
 }
