@@ -296,19 +296,100 @@ function ShowStudents() {
     setPage(1)
   }
 
+  // const confirmDelete = async () => {
+  //   const id = deleteId
+  //   setDeleteId(null)
+  //   const student = students.find(s => s.id === id)
+  //   await supabase.from('profiles').delete().eq('id', id)
+  //   setStudents(students.filter(s => s.id !== id))
+  //   await logActivity({
+  //     performed_by: profile.id, performed_by_name: profile.name, role: 'admin',
+  //     action: 'Student Deleted', target_type: 'student',
+  //     target_name: student?.profiles?.name || 'Unknown',
+  //     details: 'Student removed from system'
+  //   })
+  // }
+
+
+
+
+
+
+  // const confirmDelete = async () => {
+  //   const id = deleteId
+  //   setDeleteId(null)
+  //   const student = students.find(s => s.id === id)
+
+  //   // Delete all related data first
+  //   await supabase.from('attendance').delete().eq('student_id', id)
+  //   await supabase.from('marks').delete().eq('student_id', id)
+  //   await supabase.from('fee_assignments').delete().eq('student_id', id)
+  //   await supabase.from('fee_payments').delete().eq('student_id', id)
+  //   await supabase.from('feedback').delete().eq('student_id', id)
+  //   await supabase.from('focus_logs').delete().eq('student_id', id)
+  //   await supabase.from('assignment_analysis').delete().eq('student_id', id)
+  //   await supabase.from('students').delete().eq('id', id)
+  //   await supabase.from('profiles').delete().eq('id', id)
+
+  //   // Delete from Supabase Auth (removes from Authentication > Users)
+  //   await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-user`, {
+  //     method: 'DELETE',
+  //     headers: {
+  //       'Content-Type': 'application/json',
+  //       'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+  //     },
+  //     body: JSON.stringify({ userId: id })
+  //   })
+
+  //   setStudents(students.filter(s => s.id !== id))
+  //   await logActivity({
+  //     performed_by: profile.id, performed_by_name: profile.name, role: 'admin',
+  //     action: 'Student Deleted', target_type: 'student',
+  //     target_name: student?.profiles?.name || 'Unknown',
+  //     details: 'Student removed from system'
+  //   })
+  // }
+
+
+
   const confirmDelete = async () => {
-    const id = deleteId
-    setDeleteId(null)
-    const student = students.find(s => s.id === id)
-    await supabase.from('profiles').delete().eq('id', id)
-    setStudents(students.filter(s => s.id !== id))
-    await logActivity({
-      performed_by: profile.id, performed_by_name: profile.name, role: 'admin',
-      action: 'Student Deleted', target_type: 'student',
-      target_name: student?.profiles?.name || 'Unknown',
-      details: 'Student removed from system'
-    })
-  }
+  const id = deleteId
+  setDeleteId(null)
+  const student = students.find(s => s.id === id)
+
+  // 1. Delete from Supabase Auth FIRST
+  const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-user`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+    },
+    body: JSON.stringify({ userId: id })
+  })
+  const result = await res.json()
+  console.log('Auth delete result:', result)
+
+  // 2. Then delete from DB tables
+  await supabase.from('attendance').delete().eq('student_id', id)
+  await supabase.from('marks').delete().eq('student_id', id)
+  await supabase.from('fee_assignments').delete().eq('student_id', id)
+  await supabase.from('fee_payments').delete().eq('student_id', id)
+  await supabase.from('feedback').delete().eq('student_id', id)
+  await supabase.from('focus_logs').delete().eq('student_id', id)
+  await supabase.from('assignment_analysis').delete().eq('student_id', id)
+  await supabase.from('students').delete().eq('id', id)
+  await supabase.from('profiles').delete().eq('id', id)
+
+  // 3. Update UI
+  setStudents(prev => prev.filter(s => s.id !== id))
+
+  await logActivity({
+    performed_by: profile.id, performed_by_name: profile.name, role: 'admin',
+    action: 'Student Deleted', target_type: 'student',
+    target_name: student?.profiles?.name || 'Unknown',
+    details: 'Student removed from system'
+  })
+}
 
   const handleEdit = async () => {
     const { data: existing } = await supabase

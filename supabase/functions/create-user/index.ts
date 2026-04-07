@@ -1,16 +1,21 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, DELETE, OPTIONS',
 }
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
+
   const supabaseAdmin = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
   )
+
   if (req.method === 'DELETE') {
     const { userId } = await req.json()
     const { error } = await supabaseAdmin.auth.admin.deleteUser(userId)
@@ -25,6 +30,7 @@ Deno.serve(async (req) => {
       status: 200,
     })
   }
+
   const { email, password } = await req.json()
   const { data, error } = await supabaseAdmin.auth.admin.createUser({
     email,
