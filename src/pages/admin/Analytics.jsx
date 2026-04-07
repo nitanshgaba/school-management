@@ -11,6 +11,71 @@ export default function Analytics() {
 
   useEffect(() => { fetchAll() }, [])
 
+  // const fetchAll = async () => {
+  //   const [
+  //     { count: teachers },
+  //     { count: students },
+  //     { count: exams },
+  //     { count: notices },
+  //   ] = await Promise.all([
+  //     supabase.from('teachers').select('*', { count: 'exact', head: true }),
+  //     supabase.from('students').select('*', { count: 'exact', head: true }),
+  //     supabase.from('exams').select('*', { count: 'exact', head: true }),
+  //     supabase.from('notices').select('*', { count: 'exact', head: true }),
+  //   ])
+  //   setStats({ teachers: teachers || 0, students: students || 0, exams: exams || 0, notices: notices || 0 })
+
+  //   // Attendance breakdown
+  //   const { data: attData } = await supabase.from('attendance').select('status, is_present')
+  //   const present = attData?.filter(a => a.is_present || a.status === 'present').length || 0
+  //   const absent = attData?.filter(a => !a.is_present && a.status !== 'present').length || 0
+  //   setAttendanceData([
+  //     { label: 'Present', value: present, color: '#22c55e' },
+  //     { label: 'Absent', value: absent, color: '#ef4444' },
+  //   ])
+
+  //   // Students per class
+  //   const { data: classStudents } = await supabase.from('students').select('class_id, classes(name)')
+  //   const classMap = {}
+  //   classStudents?.forEach(s => {
+  //     const name = 'Class ' + (s.classes?.name || s.class_id)
+  //     classMap[name] = (classMap[name] || 0) + 1
+  //   })
+  //   setClassData(Object.entries(classMap).map(([label, value]) => ({ label, value })))
+
+  //   // Marks distribution
+  //   const { data: marks } = await supabase.from('marks').select('obtained_marks, total_marks')
+  //   const dist = { 'A (75-100)': 0, 'B (60-74)': 0, 'C (50-59)': 0, 'D (35-49)': 0, 'F (<35)': 0 }
+  //   marks?.forEach(m => {
+  //     const pct = m.total_marks > 0 ? (m.obtained_marks / m.total_marks) * 100 : 0
+  //     if (pct >= 75) dist['A (75-100)']++
+  //     else if (pct >= 60) dist['B (60-74)']++
+  //     else if (pct >= 50) dist['C (50-59)']++
+  //     else if (pct >= 35) dist['D (35-49)']++
+  //     else dist['F (<35)']++
+  //   })
+  //   setMarksData(Object.entries(dist).map(([label, value]) => ({ label, value })))
+
+  //   // At-risk students (attendance < 75% or marks < 40%)
+  //   const { data: allStudents } = await supabase.from('students').select('id, roll_no, profiles(name)')
+  //   const risks = []
+  //   for (const s of (allStudents || [])) {
+  //     const { data: att } = await supabase.from('attendance').select('is_present, status').eq('student_id', s.id)
+  //     const total = att?.length || 0
+  //     const presentCount = att?.filter(a => a.is_present || a.status === 'present').length || 0
+  //     const attPct = total > 0 ? Math.round((presentCount / total) * 100) : 100
+  //     const { data: studentMarks } = await supabase.from('marks').select('obtained_marks, total_marks').eq('student_id', s.id)
+  //     const avgPct = studentMarks?.length > 0
+  //       ? Math.round(studentMarks.reduce((sum, m) => sum + (m.total_marks > 0 ? (m.obtained_marks / m.total_marks) * 100 : 0), 0) / studentMarks.length)
+  //       : null
+  //     if (attPct < 75 || (avgPct !== null && avgPct < 40)) {
+  //       risks.push({ name: s.profiles?.name, roll: s.roll_no, attPct, avgPct, reason: attPct < 75 ? 'Low Attendance' : 'Low Marks' })
+  //     }
+  //   }
+  //   setAtRisk(risks)
+  //   setLoading(false)
+  // }
+
   const fetchAll = async () => {
     const [
       { count: teachers },
@@ -43,11 +108,19 @@ export default function Analytics() {
     })
     setClassData(Object.entries(classMap).map(([label, value]) => ({ label, value })))
 
-    // Marks distribution
-    const { data: marks } = await supabase.from('marks').select('obtained_marks, total_marks')
+    // --- FIX 1: MARKS DISTRIBUTION ---
+    // Fetch marks AND the max_marks from the linked exam
+    const { data: marks } = await supabase.from('marks').select('marks, obtained_marks, exams(max_marks)')
     const dist = { 'A (75-100)': 0, 'B (60-74)': 0, 'C (50-59)': 0, 'D (35-49)': 0, 'F (<35)': 0 }
+    
     marks?.forEach(m => {
-      const pct = m.total_marks > 0 ? (m.obtained_marks / m.total_marks) * 100 : 0
+      // Handle either column name depending on how it was saved
+      const obt = m.obtained_marks ?? m.marks ?? 0; 
+      // Safely grab the max_marks from the exam, fallback to 100
+      const max = m.exams?.max_marks || 100; 
+      
+      const pct = max > 0 ? (obt / max) * 100 : 0
+      
       if (pct >= 75) dist['A (75-100)']++
       else if (pct >= 60) dist['B (60-74)']++
       else if (pct >= 50) dist['C (50-59)']++
@@ -56,18 +129,30 @@ export default function Analytics() {
     })
     setMarksData(Object.entries(dist).map(([label, value]) => ({ label, value })))
 
-    // At-risk students (attendance < 75% or marks < 40%)
+    // --- FIX 2: AT-RISK STUDENTS ---
     const { data: allStudents } = await supabase.from('students').select('id, roll_no, profiles(name)')
     const risks = []
+    
     for (const s of (allStudents || [])) {
       const { data: att } = await supabase.from('attendance').select('is_present, status').eq('student_id', s.id)
       const total = att?.length || 0
       const presentCount = att?.filter(a => a.is_present || a.status === 'present').length || 0
       const attPct = total > 0 ? Math.round((presentCount / total) * 100) : 100
-      const { data: studentMarks } = await supabase.from('marks').select('obtained_marks, total_marks').eq('student_id', s.id)
-      const avgPct = studentMarks?.length > 0
-        ? Math.round(studentMarks.reduce((sum, m) => sum + (m.total_marks > 0 ? (m.obtained_marks / m.total_marks) * 100 : 0), 0) / studentMarks.length)
-        : null
+      
+      // Fetch marks AND max_marks for this specific student
+      const { data: studentMarks } = await supabase.from('marks').select('marks, obtained_marks, exams(max_marks)').eq('student_id', s.id)
+      
+      let avgPct = null;
+      if (studentMarks && studentMarks.length > 0) {
+        let totalPctSum = 0;
+        studentMarks.forEach(m => {
+             const obt = m.obtained_marks ?? m.marks ?? 0;
+             const max = m.exams?.max_marks || 100;
+             totalPctSum += (max > 0 ? (obt / max) * 100 : 0);
+        });
+        avgPct = Math.round(totalPctSum / studentMarks.length);
+      }
+      
       if (attPct < 75 || (avgPct !== null && avgPct < 40)) {
         risks.push({ name: s.profiles?.name, roll: s.roll_no, attPct, avgPct, reason: attPct < 75 ? 'Low Attendance' : 'Low Marks' })
       }
@@ -75,6 +160,9 @@ export default function Analytics() {
     setAtRisk(risks)
     setLoading(false)
   }
+
+
+
 
   const maxClassVal = Math.max(...classData.map(d => d.value), 1)
   const maxMarksVal = Math.max(...marksData.map(d => d.value), 1)
