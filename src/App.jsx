@@ -39,6 +39,7 @@ import TeacherExams from './pages/teacher/Exams'
 import TeacherFeedback from './pages/teacher/Feedback'
 import TeacherEvents from './pages/teacher/Events'
 import TeacherAnnouncements from './pages/teacher/Announcements'
+import TeacherFocusTracker from './pages/teacher/FocusTracker'
 
 import StudentLayout from './pages/student/StudentLayout'
 import StudentDashboard from './pages/student/Dashboard'
@@ -130,6 +131,7 @@ function App() {
           <Route path="announcements" element={<TeacherAnnouncements />} />
           <Route path="focus-logs" element={<FocusLogs />} />
           <Route path="question-paper" element={<TeacherQuestionPaper />} />
+          <Route path="focus-tracker" element={<TeacherFocusTracker />} />
         </Route>
 
         <Route path="/student" element={
